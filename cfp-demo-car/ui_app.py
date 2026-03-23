@@ -704,8 +704,7 @@ def run_ui(simulate: bool = False):
                     if action:
                         if action["type"] == "confirm":
                             pygame.quit()
-                            if not simulate:
-                                subprocess.run(["sudo", "shutdown", "-h", "now"])
+                            subprocess.run(["sudo", "shutdown", "-h", "now"])
                             sys.exit(0)
                         elif action["type"] == "cancel":
                             show_shutdown_confirm = False
