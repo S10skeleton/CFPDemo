@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.log
+state.json
+assets/fonts/*.ttf
+assets/fonts/*.otf

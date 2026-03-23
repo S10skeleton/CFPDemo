@@ -1,0 +1,7 @@
+pygame==2.5.2
+RPi.GPIO==0.7.1; platform_machine == "aarch64"
+python-can==4.3.1
+twilio==8.10.0
+pillow==10.2.0
+python-dotenv==1.0.1
+flask==3.0.2

@@ -1,0 +1,13 @@
+[Unit]
+Description=CFP OBD2 Emulator
+After=bluetooth.target network.target cfp-ui.service
+
+[Service]
+ExecStart=/usr/bin/python3 /home/s10skeleton/cfp-demo/obd_emulator.py
+Environment=CFP_SIMULATE=0
+Restart=always
+User=s10skeleton
+WorkingDirectory=/home/s10skeleton/cfp-demo
+
+[Install]
+WantedBy=multi-user.target
