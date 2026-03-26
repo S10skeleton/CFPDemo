@@ -1,13 +1,16 @@
 [Unit]
-Description=CFP OBD2 Emulator
-After=bluetooth.target network.target cfp-ui.service
+Description=CFP OBD2 CAN Bus Emulator
+After=network.target
+Wants=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /home/s10skeleton/cfp-demo/obd_emulator.py
+ExecStartPre=/sbin/ip link set can1 up type can bitrate 500000
+ExecStart=/usr/bin/python3 /home/s10skeleton/CFPDemo/cfp-demo-car/obd_emulator.py
 Environment=CFP_SIMULATE=0
 Restart=always
+RestartSec=3
 User=s10skeleton
-WorkingDirectory=/home/s10skeleton/cfp-demo
+WorkingDirectory=/home/s10skeleton/CFPDemo/cfp-demo-car
 
 [Install]
 WantedBy=multi-user.target

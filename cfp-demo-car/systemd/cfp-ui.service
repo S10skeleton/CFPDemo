@@ -3,14 +3,12 @@ Description=CFP Demo Touchscreen UI
 After=graphical.target
 
 [Service]
-ExecStart=/usr/bin/python3 /home/s10skeleton/cfp-demo/main.py
-Environment=SDL_FBDEV=/dev/fb1
-Environment=SDL_MOUSEDRV=TSLIB
-Environment=SDL_MOUSEDEV=/dev/input/touchscreen
+ExecStart=/usr/bin/python3 /home/s10skeleton/CFPDemo/cfp-demo-car/main.py
+Environment=SDL_FBDEV=/dev/fb0
 Environment=CFP_SIMULATE=0
 Restart=always
 User=s10skeleton
-WorkingDirectory=/home/s10skeleton/cfp-demo
+WorkingDirectory=/home/s10skeleton/CFPDemo/cfp-demo-car
 
 [Install]
 WantedBy=multi-user.target
