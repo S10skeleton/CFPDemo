@@ -36,26 +36,6 @@ SCENARIOS = [
         "engine_load_pct":  22,
         "iat_c":            28,
         "o2_raw":           0x44,
-        "estimate": {
-            "greeting": "Hi Marcus! Your 2019 Malibu has been diagnosed.",
-            "intro":    "Here's what we recommend:",
-            "items": [
-                {
-                    "name":   "Upstream O2 Sensor Replacement",
-                    "parts":  89.00,
-                    "labor":  120.00,
-                    "note":   "Likely cause of P0420 + P0171"
-                },
-                {
-                    "name":   "Catalytic Converter Inspection",
-                    "parts":  0.00,
-                    "labor":  45.00,
-                    "note":   "Confirm cat health post O2 repair"
-                },
-            ],
-            "total":    254.00,
-            "footer":   "Reply APPROVE or CALL ME",
-        },
     },
     {
         "index": 1,
@@ -88,26 +68,6 @@ SCENARIOS = [
         "engine_load_pct":  20,
         "iat_c":            26,
         "o2_raw":           0x3C,
-        "estimate": {
-            "greeting": "Hi James! Your 2021 F-150 has been diagnosed.",
-            "intro":    "Here's what we recommend:",
-            "items": [
-                {
-                    "name":   "Spark Plug Replacement — Cyl 2",
-                    "parts":  24.00,
-                    "labor":  85.00,
-                    "note":   "Primary suspect for P0302"
-                },
-                {
-                    "name":   "Coil-on-Plug Boot Inspection",
-                    "parts":  0.00,
-                    "labor":  35.00,
-                    "note":   "Rule out COP failure"
-                },
-            ],
-            "total":    144.00,
-            "footer":   "Reply APPROVE or CALL ME",
-        },
     },
     {
         "index": 2,
@@ -140,26 +100,6 @@ SCENARIOS = [
         "engine_load_pct":  24,
         "iat_c":            27,
         "o2_raw":           0x50,
-        "estimate": {
-            "greeting": "Hi Sarah! Your 2020 CR-V has been diagnosed.",
-            "intro":    "Here's what we recommend:",
-            "items": [
-                {
-                    "name":   "Fuel System Pressure Test",
-                    "parts":  0.00,
-                    "labor":  65.00,
-                    "note":   "Confirm P0087 root cause"
-                },
-                {
-                    "name":   "Honda Oil Dilution TSB Review",
-                    "parts":  0.00,
-                    "labor":  45.00,
-                    "note":   "Known CR-V issue — check TSB"
-                },
-            ],
-            "total":    110.00,
-            "footer":   "Reply APPROVE or CALL ME",
-        },
     },
     {
         "index": 3,
@@ -189,26 +129,6 @@ SCENARIOS = [
         "engine_load_pct":  18,
         "iat_c":            25,
         "o2_raw":           0x48,
-        "estimate": {
-            "greeting": "Hi Derek! Your 2022 RAM 1500 has been checked.",
-            "intro":    "No fault codes found. Based on your complaint:",
-            "items": [
-                {
-                    "name":   "Transmission Fluid Service",
-                    "parts":  65.00,
-                    "labor":  85.00,
-                    "note":   "Addresses 8HP75 shudder pattern"
-                },
-                {
-                    "name":   "Torque Converter Inspection",
-                    "parts":  0.00,
-                    "labor":  55.00,
-                    "note":   "Confirm shudder source"
-                },
-            ],
-            "total":    205.00,
-            "footer":   "Reply APPROVE or CALL ME",
-        },
     },
     {
         "index": 4,
@@ -238,26 +158,6 @@ SCENARIOS = [
         "engine_load_pct":  20,
         "iat_c":            24,
         "o2_raw":           0x40,
-        "estimate": {
-            "greeting": "Hi Amy! Your 2023 Camry is in great shape.",
-            "intro":    "Here's your 90k service estimate:",
-            "items": [
-                {
-                    "name":   "Full Synthetic Oil Change",
-                    "parts":  42.00,
-                    "labor":  25.00,
-                    "note":   "0W-20 full synthetic"
-                },
-                {
-                    "name":   "90k Inspection Service",
-                    "parts":  0.00,
-                    "labor":  89.00,
-                    "note":   "Brakes, fluids, filters, belts"
-                },
-            ],
-            "total":    156.00,
-            "footer":   "Reply APPROVE or CALL ME",
-        },
     }
 ]
 

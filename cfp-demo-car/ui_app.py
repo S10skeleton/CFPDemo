@@ -6,10 +6,8 @@ CFP Demo Car — Pygame Touchscreen UI
 
 import os
 import sys
-import time
 import pygame
-import datetime
-from state import read_state, set_scenario_index, get_scenario_index, write_state
+from state import read_state, set_scenario_index
 from config import SCENARIOS, get_scenario
 
 # —— Constants ————————————————————————————————————————————————————————————————
@@ -27,7 +25,6 @@ CARD_W      = DISPLAY_W - 24
 SCREEN_HOME     = 0
 SCREEN_LIVE     = 1
 SCREEN_SETTINGS = 2
-SCREEN_ESTIMATE = 3
 
 COLORS = {
     "bg":           (10,  10,  10),
@@ -265,11 +262,6 @@ def draw_live(surface, fonts, state, pulse_frame=0):
         draw_text(surface, label, fonts["small"], COLORS["gray"], px, pid_y)
         draw_text(surface, val, fonts["label"], COLORS["white"], px, pid_y + 13)
 
-    # SMS sent confirmation
-    if state.get("sms_sent", False):
-        draw_text(surface, f"\u2709 SMS SENT  \u2192  {os.getenv('DEMO_PHONE_NUMBER', 'demo phone')}",
-                  fonts["small"], COLORS["cyan"], CARD_X + 4, pid_y - 21)
-
     # Footer
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
@@ -288,12 +280,8 @@ def get_live_touch(x, y):
 
 # —— Screen: SETTINGS ————————————————————————————————————————————————————————
 
-def draw_settings(surface, fonts, state, input_fields, active_field=None):
-    """
-    Settings screen — Twilio config + system controls.
-    input_fields: dict of field_name -> current string value
-    active_field: currently selected field name or None
-    """
+def draw_settings(surface, fonts, state):
+    """Settings screen — system controls only (reboot/shutdown)."""
     surface.fill(COLORS["bg"])
     draw_header(surface, fonts, state, SCREEN_SETTINGS)
 
@@ -303,48 +291,16 @@ def draw_settings(surface, fonts, state, input_fields, active_field=None):
     pygame.draw.line(surface, COLORS["dark_gray"],
                      (CARD_X, title_y + 22), (DISPLAY_W - CARD_X, title_y + 22), 1)
 
-    fields = [
-        ("demo_phone",    "DEMO PHONE",   "DEMO_PHONE_NUMBER"),
-        ("twilio_sid",    "TWILIO SID",   "TWILIO_ACCOUNT_SID"),
-        ("twilio_token",  "AUTH TOKEN",   "TWILIO_AUTH_TOKEN"),
-        ("twilio_from",   "FROM NUMBER",  "TWILIO_FROM_NUMBER"),
-    ]
-
-    field_y = title_y + 46
-    field_h = 46
-    field_gap = 10
-
-    for fname, flabel, fenv in fields:
-        is_active = (active_field == fname)
-        val = input_fields.get(fname, os.getenv(fenv, ""))
-
-        # Mask token field
-        display_val = val
-        if fname == "twilio_token" and val and not is_active:
-            display_val = val[:6] + "\u2022" * 8 + val[-4:] if len(val) > 10 else "\u2022" * 10
-
-        label_surf = fonts["small"].render(flabel, True, COLORS["gray"])
-        surface.blit(label_surf, (CARD_X + 4, field_y + 2))
-
-        field_rect = pygame.Rect(CARD_X + 95, field_y, CARD_W - 95, field_h - 4)
-        field_bg = (35, 35, 35) if is_active else (20, 20, 20)
-        border_color = COLORS["blue"] if is_active else COLORS["dark_gray"]
-        draw_rect_filled(surface, field_bg, field_rect, radius=3)
-        draw_rect_outline(surface, border_color, field_rect, width=1, radius=3)
-        draw_text(surface, display_val, fonts["small"], COLORS["white"],
-                  field_rect.x + 6, field_rect.y + 8, max_width=field_rect.width - 12)
-
-        field_y += field_h + field_gap
+    info_y = title_y + 60
+    draw_text(surface, "System Controls", fonts["label"], COLORS["gray"], CARD_X + 4, info_y)
 
     # Footer buttons
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
     draw_footer_button(surface, fonts, "\u2190 BACK",
-                       (CARD_X, footer_y, 130, btn_h), COLORS["dark_gray"])
-    draw_footer_button(surface, fonts, "\U0001f4be SAVE",
-                       (CARD_X + 146, footer_y, 130, btn_h), COLORS["blue"])
+                       (CARD_X, footer_y, 150, btn_h), COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "\U0001f504 REBOOT",
-                       (CARD_X + 292, footer_y, 150, btn_h), COLORS["dark_gray"])
+                       (CARD_X + 166, footer_y, 180, btn_h), COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "\u23fb SHUTDOWN",
                        (DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h),
                        (40, 10, 10), COLORS["crimson"])
@@ -352,215 +308,19 @@ def draw_settings(surface, fonts, state, input_fields, active_field=None):
     pygame.draw.line(surface, COLORS["dark_gray"],
                      (0, DISPLAY_H - FOOTER_H), (DISPLAY_W, DISPLAY_H - FOOTER_H), 1)
 
-def get_settings_touch(x, y, fields_config):
+def get_settings_touch(x, y):
     """Returns action for touch on settings screen."""
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
 
-    if pygame.Rect(CARD_X, footer_y, 130, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X, footer_y, 150, btn_h).collidepoint(x, y):
         return {"type": "back"}
-    if pygame.Rect(CARD_X + 146, footer_y, 130, btn_h).collidepoint(x, y):
-        return {"type": "save"}
-    if pygame.Rect(CARD_X + 292, footer_y, 150, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X + 166, footer_y, 180, btn_h).collidepoint(x, y):
         return {"type": "reboot"}
     if pygame.Rect(DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h).collidepoint(x, y):
         return {"type": "shutdown"}
 
-    # Field tap
-    fields = ["demo_phone", "twilio_sid", "twilio_token", "twilio_from"]
-    title_y = CONTENT_TOP + 8
-    field_y = title_y + 46
-    field_h = 46
-    field_gap = 10
-    for fname in fields:
-        field_rect = pygame.Rect(CARD_X + 95, field_y, CARD_W - 95, field_h - 4)
-        if field_rect.collidepoint(x, y):
-            return {"type": "field_tap", "field": fname}
-        field_y += field_h + field_gap
-
     return None
-
-# —— Screen: ESTIMATE (SMS Thread) ———————————————————————————————————————————
-
-def draw_estimate(surface, fonts, state, reply_bubble_text="", approval_sent=False):
-    """
-    Estimate screen — looks like a phone SMS thread.
-    CFP message comes in as a left-aligned gray bubble.
-    Customer reply (APPROVE/CALL ME) appears as right-aligned crimson bubble.
-    """
-    surface.fill(COLORS["bg"])
-
-    scenario = get_scenario(state.get("scenario_index", 0))
-    estimate = scenario.get("estimate", {})
-
-    # Header
-    pygame.draw.rect(surface, (18, 18, 18), (0, 0, DISPLAY_W, HEADER_H))
-    pygame.draw.line(surface, COLORS["crimson"],
-                     (0, HEADER_H - 1), (DISPLAY_W, HEADER_H - 1), 1)
-    draw_text(surface, "\u2b21 CRIMSONFORGE", fonts["header"], COLORS["crimson"], 10, 8)
-    draw_text(surface, "\u2709 ESTIMATE", fonts["small"], COLORS["cyan"],
-              DISPLAY_W - 88, 10)
-
-    # Contact bar
-    contact_y = HEADER_H + 4
-    draw_text(surface, scenario["customer"], fonts["label"], COLORS["white"],
-              CARD_X + 4, contact_y)
-    draw_text(surface, scenario["vehicle"], fonts["small"], COLORS["gray"],
-              CARD_X + 4, contact_y + 16)
-
-    pygame.draw.line(surface, COLORS["dark_gray"],
-                     (0, contact_y + 30), (DISPLAY_W, contact_y + 30), 1)
-
-    # CFP message bubble (left-aligned, dark gray)
-    bubble_top  = contact_y + 36
-    bubble_x    = CARD_X
-    bubble_maxw = 310
-    bubble_pad  = 8
-
-    # Build message lines
-    lines = []
-    lines.append(estimate.get("greeting", f"Hi {scenario['customer']}!"))
-    lines.append(estimate.get("intro", "Here's your estimate:"))
-    lines.append("")
-
-    items = estimate.get("items", [])
-    for item in items:
-        lines.append(item["name"])
-        parts = item.get("parts", 0)
-        labor = item.get("labor", 0)
-        if parts > 0:
-            lines.append(f"  Parts ${parts:.0f}  \u00b7  Labor ${labor:.0f}")
-        else:
-            lines.append(f"  Labor ${labor:.0f}")
-
-    lines.append("")
-    lines.append(f"TOTAL  ${estimate.get('total', 0):.2f}")
-    lines.append("")
-    lines.append(estimate.get("footer", "Reply APPROVE or CALL ME"))
-
-    # Measure bubble height
-    line_h      = 14
-    bubble_h    = len(lines) * line_h + bubble_pad * 2
-    bubble_rect = pygame.Rect(bubble_x, bubble_top,
-                              bubble_maxw + bubble_pad * 2, bubble_h)
-
-    # Clamp bubble so it doesn't overlap footer
-    footer_y   = DISPLAY_H - FOOTER_H
-    max_bub_h  = footer_y - bubble_top - 28
-    if bubble_h > max_bub_h:
-        bubble_h    = max_bub_h
-        bubble_rect = pygame.Rect(bubble_x, bubble_top,
-                                  bubble_maxw + bubble_pad * 2, bubble_h)
-
-    draw_rect_filled(surface, (35, 35, 35), bubble_rect, radius=10)
-
-    # Draw message lines inside bubble (clip to bubble)
-    surface.set_clip(bubble_rect.inflate(-bubble_pad, -bubble_pad))
-    text_y = bubble_top + bubble_pad
-    for line in lines:
-        if text_y + line_h > bubble_top + bubble_h - bubble_pad:
-            break
-        if line == "":
-            text_y += 5
-            continue
-        # Highlight TOTAL line
-        if line.startswith("TOTAL"):
-            draw_text(surface, line, fonts["label"], COLORS["white"],
-                      bubble_x + bubble_pad, text_y)
-        elif line.startswith("  "):
-            draw_text(surface, line.strip(), fonts["small"], COLORS["gray"],
-                      bubble_x + bubble_pad + 10, text_y)
-        elif line == estimate.get("footer", ""):
-            draw_text(surface, line, fonts["small"], COLORS["cyan"],
-                      bubble_x + bubble_pad, text_y)
-        else:
-            draw_text(surface, line, fonts["body"], COLORS["white"],
-                      bubble_x + bubble_pad, text_y)
-        text_y += line_h
-    surface.set_clip(None)
-
-    # Timestamp
-    ts = datetime.datetime.now().strftime("%I:%M %p").lstrip("0")
-    draw_text(surface, ts, fonts["small"], COLORS["dark_gray"],
-              bubble_x + 4, bubble_rect.bottom + 3)
-
-    # Customer reply bubble (right-aligned, crimson)
-    if reply_bubble_text and approval_sent:
-        reply_surf  = fonts["label"].render(reply_bubble_text, True, COLORS["white"])
-        rb_w        = reply_surf.get_width() + 20
-        rb_h        = 26
-        rb_x        = DISPLAY_W - CARD_X - rb_w
-        rb_y        = bubble_rect.bottom + 20
-        rb_rect     = pygame.Rect(rb_x, rb_y, rb_w, rb_h)
-        draw_rect_filled(surface, COLORS["crimson_dark"], rb_rect, radius=10)
-        surface.blit(reply_surf, (rb_x + 10, rb_y + 5))
-
-        # Confirmation text
-        confirm_text = "\u2713 Sent to shop!" if reply_bubble_text == "APPROVE" \
-                       else "\u260e Shop will call you."
-        draw_text(surface, confirm_text, fonts["small"], COLORS["cyan"],
-                  DISPLAY_W - CARD_X - fonts["small"].size(confirm_text)[0] - 4,
-                  rb_rect.bottom + 4)
-
-    # Footer buttons
-    pygame.draw.line(surface, COLORS["dark_gray"],
-                     (0, DISPLAY_H - FOOTER_H), (DISPLAY_W, DISPLAY_H - FOOTER_H), 1)
-    footer_btn_y = DISPLAY_H - FOOTER_H + 4
-    btn_h        = FOOTER_H - 8
-
-    if not approval_sent:
-        draw_footer_button(surface, fonts, "\u2713 APPROVE",
-                           (CARD_X, footer_btn_y, 220, btn_h),
-                           COLORS["crimson_dark"], COLORS["white"])
-        draw_footer_button(surface, fonts, "\u260e CALL ME",
-                           (CARD_X + 236, footer_btn_y, 200, btn_h),
-                           (20, 40, 70), COLORS["white"])
-        draw_footer_button(surface, fonts, "\u2190 BACK",
-                           (DISPLAY_W - CARD_X - 140, footer_btn_y, 140, btn_h),
-                           COLORS["dark_gray"])
-    else:
-        draw_footer_button(surface, fonts, "\u2713 SENT",
-                           (CARD_X, footer_btn_y, 150, btn_h),
-                           COLORS["dark_gray"], COLORS["gray"])
-
-
-def get_estimate_touch(x, y):
-    """Returns action for touch on estimate screen."""
-    footer_btn_y = DISPLAY_H - FOOTER_H + 4
-    btn_h        = FOOTER_H - 8
-
-    if pygame.Rect(CARD_X, footer_btn_y, 220, btn_h).collidepoint(x, y):
-        return {"type": "approve"}
-    if pygame.Rect(CARD_X + 236, footer_btn_y, 200, btn_h).collidepoint(x, y):
-        return {"type": "callme"}
-    if pygame.Rect(DISPLAY_W - CARD_X - 140, footer_btn_y, 140, btn_h).collidepoint(x, y):
-        return {"type": "back"}
-    return None
-
-
-def _fire_reply(action: str, simulate: bool):
-    """Fire reply to CFP via webhook or simulate."""
-    import urllib.request
-    import json
-
-    payload = json.dumps({"action": action}).encode()
-    port    = int(os.getenv("WEBHOOK_PORT", "5000"))
-
-    if simulate:
-        print(f"\n[UI] Customer reply: {action}")
-        print(f"[UI] (In production this fires POST to localhost:{port}/sms/reply)")
-        return
-
-    try:
-        req = urllib.request.Request(
-            f"http://localhost:{port}/sms/reply",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        urllib.request.urlopen(req, timeout=3)
-    except Exception as e:
-        print(f"[UI] Reply webhook error: {e}")
 
 # —— Shutdown Confirm Overlay ————————————————————————————————————————————————
 
@@ -630,15 +390,6 @@ def run_ui(simulate: bool = False):
     feedback_timer = 0
     show_shutdown_confirm = False
 
-    # Estimate screen state
-    approval_sent     = False
-    approval_timer    = 0
-    reply_bubble_text = ""
-
-    # Settings input fields (loaded from env on open)
-    settings_fields = {}
-    active_field    = None
-
     # State polling
     last_state    = read_state()
     state_poll_ms = 500   # poll state.json every 500ms
@@ -662,13 +413,6 @@ def run_ui(simulate: bool = False):
             if not last_state.get("connected") and current_screen == SCREEN_LIVE:
                 current_screen = SCREEN_HOME
 
-            # Auto-transition to ESTIMATE when show_estimate is set
-            if last_state.get("show_estimate") and current_screen not in (SCREEN_ESTIMATE,):
-                current_screen    = SCREEN_ESTIMATE
-                approval_sent     = False
-                approval_timer    = 0
-                reply_bubble_text = ""
-
         # —— Events ———————————————————————————————————————————————————————
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -686,14 +430,6 @@ def run_ui(simulate: bool = False):
                     if event.key == pygame.K_d and current_screen != SCREEN_SETTINGS:
                         from state import set_connected
                         set_connected(False)
-                        last_state = read_state()
-                    # Press E in simulate mode to trigger estimate screen
-                    if event.key == pygame.K_e:
-                        write_state({
-                            "show_estimate":     True,
-                            "inbound_sms":       "",
-                            "estimate_approved": False,
-                        })
                         last_state = read_state()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -719,9 +455,7 @@ def run_ui(simulate: bool = False):
                             set_scenario_index(action["index"])
                             last_state = read_state()
                         elif action["type"] == "settings":
-                            current_screen  = SCREEN_SETTINGS
-                            settings_fields = {}
-                            active_field    = None
+                            current_screen = SCREEN_SETTINGS
                         elif action["type"] == "shutdown":
                             show_shutdown_confirm = True
 
@@ -732,7 +466,7 @@ def run_ui(simulate: bool = False):
                             current_screen = SCREEN_HOME
 
                 elif current_screen == SCREEN_SETTINGS:
-                    action = get_settings_touch(mx, my, settings_fields)
+                    action = get_settings_touch(mx, my)
                     if action:
                         if action["type"] == "back":
                             current_screen = SCREEN_HOME
@@ -741,36 +475,6 @@ def run_ui(simulate: bool = False):
                         elif action["type"] == "reboot":
                             if not simulate:
                                 subprocess.run(["sudo", "reboot"])
-                        elif action["type"] == "save":
-                            _save_settings(settings_fields)
-                            current_screen = SCREEN_HOME
-                        elif action["type"] == "field_tap":
-                            active_field = action["field"]
-
-                elif current_screen == SCREEN_ESTIMATE:
-                    action = get_estimate_touch(mx, my)
-                    if action:
-                        if action["type"] in ("approve", "callme"):
-                            label = "APPROVE" if action["type"] == "approve" else "CALL ME"
-                            reply_bubble_text = label
-                            approval_sent     = True
-                            approval_timer    = now
-                            _fire_reply(label, simulate)
-                        elif action["type"] == "back":
-                            write_state({"show_estimate": False})
-                            current_screen = SCREEN_HOME
-
-            # Keyboard input for settings fields (simulate mode convenience)
-            if current_screen == SCREEN_SETTINGS and active_field:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_BACKSPACE:
-                        settings_fields[active_field] = \
-                            settings_fields.get(active_field, "")[:-1]
-                    elif event.key == pygame.K_RETURN:
-                        active_field = None
-                    elif event.unicode:
-                        settings_fields[active_field] = \
-                            settings_fields.get(active_field, "") + event.unicode
 
         # —— Clear touch feedback after 150ms ————————————————————————————
         if touch_feedback is not None and now - feedback_timer > 150:
@@ -783,15 +487,7 @@ def run_ui(simulate: bool = False):
             draw_live(screen, fonts, last_state, pulse_frame)
             pulse_frame = (pulse_frame + 1) % 60
         elif current_screen == SCREEN_SETTINGS:
-            draw_settings(screen, fonts, last_state, settings_fields, active_field)
-        elif current_screen == SCREEN_ESTIMATE:
-            draw_estimate(screen, fonts, last_state, reply_bubble_text, approval_sent)
-            # Return to home 2.5 seconds after approval sent
-            if approval_sent and now - approval_timer > 2500:
-                approval_sent     = False
-                reply_bubble_text = ""
-                write_state({"show_estimate": False, "estimate_approved": True})
-                current_screen = SCREEN_HOME
+            draw_settings(screen, fonts, last_state)
 
         if show_shutdown_confirm:
             draw_shutdown_confirm(screen, fonts)
@@ -802,40 +498,3 @@ def run_ui(simulate: bool = False):
     pygame.quit()
     sys.exit(0)
 
-# —— Settings Save Helper ————————————————————————————————————————————————————
-
-def _save_settings(fields: dict):
-    """
-    Write updated settings to .env file.
-    Only writes fields that have been changed (non-empty).
-    """
-    env_map = {
-        "demo_phone":   "DEMO_PHONE_NUMBER",
-        "twilio_sid":   "TWILIO_ACCOUNT_SID",
-        "twilio_token": "TWILIO_AUTH_TOKEN",
-        "twilio_from":  "TWILIO_FROM_NUMBER",
-    }
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-
-    # Read existing lines
-    existing = {}
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                line = line.strip()
-                if "=" in line and not line.startswith("#"):
-                    k, v = line.split("=", 1)
-                    existing[k.strip()] = v.strip()
-
-    # Merge updates
-    for field_name, env_key in env_map.items():
-        val = fields.get(field_name, "").strip()
-        if val:
-            existing[env_key] = val
-
-    # Write back
-    with open(env_path, "w") as f:
-        for k, v in existing.items():
-            f.write(f"{k}={v}\n")
-
-    print("[SETTINGS] .env updated")

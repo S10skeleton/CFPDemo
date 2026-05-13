@@ -37,13 +37,6 @@ def main():
     from state import reset_state
     reset_state()
 
-    # Start Twilio webhook server in background thread
-    import threading
-    from twilio_server import run_server
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
-    print("[CFP] Twilio webhook server started (background)")
-
     # Launch UI (blocking — runs until shutdown)
     from ui_app import run_ui
     run_ui(simulate=simulate)

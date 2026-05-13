@@ -13,13 +13,7 @@ STATE_FILE = os.path.join(os.path.dirname(__file__), "state.json")
 DEFAULT_STATE = {
     "scenario_index":    0,
     "connected":         False,
-    "sms_sent":          False,
     "last_vin":          "",
-    "show_estimate":     False,
-    "inbound_sms":       "",
-    "inbound_from":      "",
-    "estimate_approved": False,
-    "approval_action":   "",
 }
 
 def read_state() -> dict:
@@ -45,23 +39,7 @@ def get_scenario_index() -> int:
     return read_state().get("scenario_index", 0)
 
 def set_scenario_index(index: int) -> None:
-    write_state({"scenario_index": index, "connected": False, "sms_sent": False})
+    write_state({"scenario_index": index, "connected": False})
 
 def set_connected(connected: bool) -> None:
     write_state({"connected": connected})
-
-def set_sms_sent(sent: bool) -> None:
-    write_state({"sms_sent": sent})
-
-def set_show_estimate(show: bool) -> None:
-    write_state({"show_estimate": show})
-
-def set_estimate_approved(approved: bool, action: str = "") -> None:
-    write_state({
-        "estimate_approved": approved,
-        "approval_action":   action,
-        "show_estimate":     False,
-    })
-
-def get_inbound_sms() -> str:
-    return read_state().get("inbound_sms", "")
