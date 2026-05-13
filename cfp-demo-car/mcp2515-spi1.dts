@@ -1,0 +1,40 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2712";
+
+    fragment@0 {
+        target = <&spi1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+
+            mcp2515: mcp2515@0 {
+                compatible = "microchip,mcp2515";
+                reg = <0>;
+                spi-max-frequency = <2000000>;
+                oscillator-frequency = <8000000>;
+                interrupt-parent = <&gpio>;
+                interrupts = <26 0x2>;
+                status = "okay";
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&gpio>;
+        __overlay__ {
+            spi1_pins: spi1_pins {
+                brcm,pins = <19 20 21>;
+                brcm,function = <3>;
+            };
+            spi1_cs_pins: spi1_cs_pins {
+                brcm,pins = <18>;
+                brcm,function = <1>;
+                brcm,pull = <1>;
+            };
+        };
+    };
+};

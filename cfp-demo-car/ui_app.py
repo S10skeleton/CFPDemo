@@ -1,7 +1,7 @@
 """
 ui_app.py
 CFP Demo Car — Pygame Touchscreen UI
-480x320 · 3.5" XPT2046 display (Pi) or desktop window (simulate)
+800x480 · 5" HDMI display (Pi) or desktop window (simulate)
 """
 
 import os
@@ -13,16 +13,16 @@ from state import read_state, set_scenario_index, get_scenario_index, write_stat
 from config import SCENARIOS, get_scenario
 
 # —— Constants ————————————————————————————————————————————————————————————————
-DISPLAY_W   = 480
-DISPLAY_H   = 320
-HEADER_H    = 32
-FOOTER_H    = 36
+DISPLAY_W   = 800
+DISPLAY_H   = 480
+HEADER_H    = 48
+FOOTER_H    = 54
 CONTENT_TOP = HEADER_H
 CONTENT_H   = DISPLAY_H - HEADER_H - FOOTER_H
-CARD_H      = 46
-CARD_MARGIN = 4
-CARD_X      = 8
-CARD_W      = DISPLAY_W - 16
+CARD_H      = 68
+CARD_MARGIN = 6
+CARD_X      = 12
+CARD_W      = DISPLAY_W - 24
 
 SCREEN_HOME     = 0
 SCREEN_LIVE     = 1
@@ -74,8 +74,8 @@ def draw_header(surface, fonts, state, current_screen):
     status_text = "CONNECTED" if connected else "READY"
     status_color = COLORS["cyan"] if connected else COLORS["green"]
 
-    pygame.draw.circle(surface, dot_color, (DISPLAY_W - 90, HEADER_H // 2), 5)
-    draw_text(surface, status_text, fonts["small"], status_color, DISPLAY_W - 80, 10)
+    pygame.draw.circle(surface, dot_color, (DISPLAY_W - 130, HEADER_H // 2), 7)
+    draw_text(surface, status_text, fonts["small"], status_color, DISPLAY_W - 118, 16)
 
 def draw_footer_button(surface, fonts, text, rect, color, text_color=None):
     """Draw a footer action button."""
@@ -158,13 +158,13 @@ def draw_home(surface, fonts, state, touch_feedback=None):
                       vehicle_x, y + 26, max_width=200)
 
     # Footer buttons
-    footer_y = DISPLAY_H - FOOTER_H + 4
-    btn_h = FOOTER_H - 8
+    footer_y = DISPLAY_H - FOOTER_H + 6
+    btn_h = FOOTER_H - 12
     draw_footer_button(surface, fonts, "\u2699 SETTINGS",
-                       (CARD_X, footer_y, 120, btn_h),
+                       (CARD_X, footer_y, 180, btn_h),
                        COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "\u23fb SHUTDOWN",
-                       (DISPLAY_W - CARD_X - 120, footer_y, 120, btn_h),
+                       (DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h),
                        (40, 10, 10), COLORS["crimson"])
 
     pygame.draw.line(surface, COLORS["dark_gray"],
@@ -178,15 +178,15 @@ def get_home_touch(x, y, state):
                       {'type': 'shutdown'}
                       None
     """
-    footer_y = DISPLAY_H - FOOTER_H + 4
-    btn_h = FOOTER_H - 8
+    footer_y = DISPLAY_H - FOOTER_H + 6
+    btn_h = FOOTER_H - 12
 
     # Settings button
-    if pygame.Rect(CARD_X, footer_y, 120, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X, footer_y, 180, btn_h).collidepoint(x, y):
         return {"type": "settings"}
 
     # Shutdown button
-    if pygame.Rect(DISPLAY_W - CARD_X - 120, footer_y, 120, btn_h).collidepoint(x, y):
+    if pygame.Rect(DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h).collidepoint(x, y):
         return {"type": "shutdown"}
 
     # Scenario cards
@@ -250,7 +250,7 @@ def draw_live(surface, fonts, state, pulse_frame=0):
                   CARD_X + 4, dtc_y + 20, max_width=CARD_W)
 
     # Live PID strip
-    pid_y = DISPLAY_H - FOOTER_H - 28
+    pid_y = DISPLAY_H - FOOTER_H - 42
     pygame.draw.line(surface, COLORS["dark_gray"],
                      (CARD_X, pid_y - 4), (DISPLAY_W - CARD_X, pid_y - 4), 1)
     pid_items = [
@@ -274,7 +274,7 @@ def draw_live(surface, fonts, state, pulse_frame=0):
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
     draw_footer_button(surface, fonts, "\u2190 BACK",
-                       (CARD_X, footer_y, 100, btn_h), COLORS["dark_gray"])
+                       (CARD_X, footer_y, 150, btn_h), COLORS["dark_gray"])
     pygame.draw.line(surface, COLORS["dark_gray"],
                      (0, DISPLAY_H - FOOTER_H), (DISPLAY_W, DISPLAY_H - FOOTER_H), 1)
 
@@ -282,7 +282,7 @@ def get_live_touch(x, y):
     """Returns action for touch on live screen."""
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
-    if pygame.Rect(CARD_X, footer_y, 100, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X, footer_y, 150, btn_h).collidepoint(x, y):
         return {"type": "back"}
     return None
 
@@ -310,9 +310,9 @@ def draw_settings(surface, fonts, state, input_fields, active_field=None):
         ("twilio_from",   "FROM NUMBER",  "TWILIO_FROM_NUMBER"),
     ]
 
-    field_y = title_y + 30
-    field_h = 30
-    field_gap = 6
+    field_y = title_y + 46
+    field_h = 46
+    field_gap = 10
 
     for fname, flabel, fenv in fields:
         is_active = (active_field == fname)
@@ -340,13 +340,13 @@ def draw_settings(surface, fonts, state, input_fields, active_field=None):
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
     draw_footer_button(surface, fonts, "\u2190 BACK",
-                       (CARD_X, footer_y, 90, btn_h), COLORS["dark_gray"])
+                       (CARD_X, footer_y, 130, btn_h), COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "\U0001f4be SAVE",
-                       (CARD_X + 100, footer_y, 90, btn_h), COLORS["blue"])
+                       (CARD_X + 146, footer_y, 130, btn_h), COLORS["blue"])
     draw_footer_button(surface, fonts, "\U0001f504 REBOOT",
-                       (CARD_X + 200, footer_y, 100, btn_h), COLORS["dark_gray"])
+                       (CARD_X + 292, footer_y, 150, btn_h), COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "\u23fb SHUTDOWN",
-                       (DISPLAY_W - CARD_X - 120, footer_y, 120, btn_h),
+                       (DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h),
                        (40, 10, 10), COLORS["crimson"])
 
     pygame.draw.line(surface, COLORS["dark_gray"],
@@ -357,21 +357,21 @@ def get_settings_touch(x, y, fields_config):
     footer_y = DISPLAY_H - FOOTER_H + 4
     btn_h = FOOTER_H - 8
 
-    if pygame.Rect(CARD_X, footer_y, 90, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X, footer_y, 130, btn_h).collidepoint(x, y):
         return {"type": "back"}
-    if pygame.Rect(CARD_X + 100, footer_y, 90, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X + 146, footer_y, 130, btn_h).collidepoint(x, y):
         return {"type": "save"}
-    if pygame.Rect(CARD_X + 200, footer_y, 100, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X + 292, footer_y, 150, btn_h).collidepoint(x, y):
         return {"type": "reboot"}
-    if pygame.Rect(DISPLAY_W - CARD_X - 120, footer_y, 120, btn_h).collidepoint(x, y):
+    if pygame.Rect(DISPLAY_W - CARD_X - 180, footer_y, 180, btn_h).collidepoint(x, y):
         return {"type": "shutdown"}
 
     # Field tap
     fields = ["demo_phone", "twilio_sid", "twilio_token", "twilio_from"]
     title_y = CONTENT_TOP + 8
-    field_y = title_y + 30
-    field_h = 30
-    field_gap = 6
+    field_y = title_y + 46
+    field_h = 46
+    field_gap = 10
     for fname in fields:
         field_rect = pygame.Rect(CARD_X + 95, field_y, CARD_W - 95, field_h - 4)
         if field_rect.collidepoint(x, y):
@@ -510,13 +510,13 @@ def draw_estimate(surface, fonts, state, reply_bubble_text="", approval_sent=Fal
 
     if not approval_sent:
         draw_footer_button(surface, fonts, "\u2713 APPROVE",
-                           (CARD_X, footer_btn_y, 150, btn_h),
+                           (CARD_X, footer_btn_y, 220, btn_h),
                            COLORS["crimson_dark"], COLORS["white"])
         draw_footer_button(surface, fonts, "\u260e CALL ME",
-                           (CARD_X + 160, footer_btn_y, 140, btn_h),
+                           (CARD_X + 236, footer_btn_y, 200, btn_h),
                            (20, 40, 70), COLORS["white"])
         draw_footer_button(surface, fonts, "\u2190 BACK",
-                           (DISPLAY_W - CARD_X - 90, footer_btn_y, 90, btn_h),
+                           (DISPLAY_W - CARD_X - 140, footer_btn_y, 140, btn_h),
                            COLORS["dark_gray"])
     else:
         draw_footer_button(surface, fonts, "\u2713 SENT",
@@ -529,11 +529,11 @@ def get_estimate_touch(x, y):
     footer_btn_y = DISPLAY_H - FOOTER_H + 4
     btn_h        = FOOTER_H - 8
 
-    if pygame.Rect(CARD_X, footer_btn_y, 150, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X, footer_btn_y, 220, btn_h).collidepoint(x, y):
         return {"type": "approve"}
-    if pygame.Rect(CARD_X + 160, footer_btn_y, 140, btn_h).collidepoint(x, y):
+    if pygame.Rect(CARD_X + 236, footer_btn_y, 200, btn_h).collidepoint(x, y):
         return {"type": "callme"}
-    if pygame.Rect(DISPLAY_W - CARD_X - 90, footer_btn_y, 90, btn_h).collidepoint(x, y):
+    if pygame.Rect(DISPLAY_W - CARD_X - 140, footer_btn_y, 140, btn_h).collidepoint(x, y):
         return {"type": "back"}
     return None
 
@@ -570,7 +570,7 @@ def draw_shutdown_confirm(surface, fonts):
     overlay.fill((0, 0, 0, 180))
     surface.blit(overlay, (0, 0))
 
-    box = pygame.Rect(80, 100, 320, 120)
+    box = pygame.Rect(200, 160, 400, 160)
     draw_rect_filled(surface, (25, 25, 25), box, radius=8)
     draw_rect_outline(surface, COLORS["crimson"], box, width=1, radius=8)
 
@@ -580,16 +580,16 @@ def draw_shutdown_confirm(surface, fonts):
               COLORS["gray"], box.x + 20, box.y + 46)
 
     draw_footer_button(surface, fonts, "CANCEL",
-                       (box.x + 20, box.y + 76, 120, 30), COLORS["dark_gray"])
+                       (box.x + 24, box.y + 100, 160, 42), COLORS["dark_gray"])
     draw_footer_button(surface, fonts, "SHUT DOWN",
-                       (box.x + 160, box.y + 76, 140, 30),
+                       (box.x + 216, box.y + 100, 160, 42),
                        COLORS["crimson_dark"], COLORS["white"])
 
 def get_shutdown_confirm_touch(x, y):
-    box_x, box_y = 80, 100
-    if pygame.Rect(box_x + 20, box_y + 76, 120, 30).collidepoint(x, y):
+    box_x, box_y = 200, 160
+    if pygame.Rect(box_x + 24, box_y + 100, 160, 42).collidepoint(x, y):
         return {"type": "cancel"}
-    if pygame.Rect(box_x + 160, box_y + 76, 140, 30).collidepoint(x, y):
+    if pygame.Rect(box_x + 216, box_y + 100, 160, 42).collidepoint(x, y):
         return {"type": "confirm"}
     return None
 
@@ -600,14 +600,14 @@ def run_ui(simulate: bool = False):
     import subprocess
 
     pygame.init()
-    pygame.display.set_caption("CFP Demo Car \u2014 Simulation")
+    pygame.display.set_caption("CFP Demo Car")
 
     if simulate:
         screen = pygame.display.set_mode((DISPLAY_W, DISPLAY_H))
     else:
         screen = pygame.display.set_mode(
             (DISPLAY_W, DISPLAY_H),
-            pygame.FULLSCREEN | pygame.NOFRAME
+            pygame.FULLSCREEN
         )
         pygame.mouse.set_visible(False)
 
@@ -615,13 +615,13 @@ def run_ui(simulate: bool = False):
 
     # Init fonts after pygame.init()
     fonts = {
-        "header": pygame.font.SysFont("monospace", 15, bold=True),
-        "title":  pygame.font.SysFont("monospace", 17, bold=True),
-        "body":   pygame.font.SysFont("monospace", 13),
-        "small":  pygame.font.SysFont("monospace", 11),
-        "label":  pygame.font.SysFont("monospace", 12, bold=True),
-        "dtc":    pygame.font.SysFont("monospace", 14, bold=True),
-        "large":  pygame.font.SysFont("monospace", 22, bold=True),
+        "header": pygame.font.SysFont("monospace", 22, bold=True),
+        "title":  pygame.font.SysFont("monospace", 24, bold=True),
+        "body":   pygame.font.SysFont("monospace", 19),
+        "small":  pygame.font.SysFont("monospace", 16),
+        "label":  pygame.font.SysFont("monospace", 18, bold=True),
+        "dtc":    pygame.font.SysFont("monospace", 20, bold=True),
+        "large":  pygame.font.SysFont("monospace", 32, bold=True),
     }
 
     current_screen = SCREEN_HOME

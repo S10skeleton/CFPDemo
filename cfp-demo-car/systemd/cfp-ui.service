@@ -4,7 +4,6 @@ After=graphical.target
 
 [Service]
 ExecStart=/usr/bin/python3 /home/s10skeleton/CFPDemo/cfp-demo-car/main.py
-Environment=SDL_FBDEV=/dev/fb0
 Environment=CFP_SIMULATE=0
 Restart=always
 User=s10skeleton

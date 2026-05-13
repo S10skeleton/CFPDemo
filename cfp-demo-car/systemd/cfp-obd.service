@@ -4,7 +4,7 @@ After=network.target
 Wants=network.target
 
 [Service]
-ExecStartPre=/sbin/ip link set can1 up type can bitrate 500000
+ExecStartPre=+/bin/sh -c '/sbin/ip link show can0 up >/dev/null 2>&1 || /sbin/ip link set can0 up type can bitrate 500000'
 ExecStart=/usr/bin/python3 /home/s10skeleton/CFPDemo/cfp-demo-car/obd_emulator.py
 Environment=CFP_SIMULATE=0
 Restart=always

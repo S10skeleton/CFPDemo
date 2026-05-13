@@ -11,7 +11,7 @@ CAN Bus protocol:
   Pi responds on arbitration ID 0x7E8 (ECU 1 response address)
 
 Simulation mode: Interactive console — type OBD PIDs, see hex responses.
-Production mode: Real python-can on socketcan can1 interface.
+Production mode: Real python-can on socketcan can0 interface.
 """
 
 import os
@@ -177,7 +177,7 @@ def on_scanner_disconnect():
 def run_can_loop():
     """
     Production mode: Listen on CAN bus, respond to OBD2 requests.
-    Requires: MCP2515 wired to SPI1, can1 interface up.
+    Requires: MCP2515 wired to SPI1, can0 interface up.
     """
     try:
         import can
@@ -185,13 +185,13 @@ def run_can_loop():
         print("[OBD] ERROR: python-can not installed. Run: pip install python-can")
         sys.exit(1)
 
-    print("[OBD] Starting CAN bus listener on can1...")
+    print("[OBD] Starting CAN bus listener on can0...")
 
     try:
-        bus = can.interface.Bus(channel="can1", bustype="socketcan")
+        bus = can.interface.Bus(channel="can0", bustype="socketcan")
     except Exception as e:
-        print(f"[OBD] ERROR: Could not open can1 — {e}")
-        print("[OBD] Check: sudo ip link set can1 up type can bitrate 500000")
+        print(f"[OBD] ERROR: Could not open can0 — {e}")
+        print("[OBD] Check: sudo ip link set can0 up type can bitrate 500000")
         sys.exit(1)
 
     print("[OBD] CAN bus ready. Waiting for OBD2 requests...")
@@ -322,5 +322,4 @@ def run_emulator(simulate: bool = False):
         run_can_loop()
 
 if __name__ == "__main__":
-    os.environ["CFP_SIMULATE"] = "1"
-    run_simulation_console()
+    run_emulator(simulate=SIMULATE)
