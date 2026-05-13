@@ -2,17 +2,22 @@
 config.py
 CFP Demo Car — Scenario Data Store
 All 5 demo vehicle/fault scenarios used by the OBD emulator and UI.
+
+MOTOR Sandbox vehicles active — swap back to original VINs after
+demo video recording is complete.
 """
 
 SCENARIOS = [
     {
+        # MOTOR Sandbox: 2012 Ford F-150
+        # VCdb Base Vehicle ID: 118906  MOTOR Vehicle ID: 26332
         "index": 0,
         "label": "S1",
-        "year": 2019,
-        "make": "Chevrolet",
-        "model": "Malibu",
-        "vehicle": "2019 Chevrolet Malibu",
-        "vin": "1G1ZD5ST4KF123456",
+        "year": 2012,
+        "make": "Ford",
+        "model": "F-150",
+        "vehicle": "2012 Ford F-150",
+        "vin": "1FTFW1ET1CFA84056",
         "customer": "Marcus Webb",
         "complaint": "Check engine light on, rough idle, poor fuel economy",
         "dtcs": ["P0420", "P0171"],
@@ -38,13 +43,15 @@ SCENARIOS = [
         "o2_raw":           0x44,
     },
     {
+        # MOTOR Sandbox: 2009 Chevrolet Silverado 1500
+        # VCdb Base Vehicle ID: 30027  MOTOR Vehicle ID: 20680
         "index": 1,
         "label": "S2",
-        "year": 2021,
-        "make": "Ford",
-        "model": "F-150",
-        "vehicle": "2021 Ford F-150",
-        "vin": "1FTFW1ET5MFA12345",
+        "year": 2009,
+        "make": "Chevrolet",
+        "model": "Silverado 1500",
+        "vehicle": "2009 Chevrolet Silverado 1500",
+        "vin": "1GCEK29079E143364",
         "customer": "James Kowalski",
         "complaint": "Misfire at highway speed, intermittent — no CEL yet",
         "dtcs": ["P0302", "P0316"],
@@ -70,21 +77,23 @@ SCENARIOS = [
         "o2_raw":           0x3C,
     },
     {
+        # MOTOR Sandbox: 2010 Honda Civic
+        # VCdb Base Vehicle ID: 95946  MOTOR Vehicle ID: 22124
         "index": 2,
         "label": "S3",
-        "year": 2020,
+        "year": 2010,
         "make": "Honda",
-        "model": "CR-V",
-        "vehicle": "2020 Honda CR-V",
-        "vin": "5J6RW2H59LA012345",
+        "model": "Civic",
+        "vehicle": "2010 Honda Civic",
+        "vin": "19XFA1F51AE028415",
         "customer": "Sarah Chen",
-        "complaint": "Oil dilution concern, slight fuel smell",
+        "complaint": "Slight fuel smell, rough cold start",
         "dtcs": ["P0087", "P0093"],
         "dtc_descriptions": {
             "P0087": "Fuel Rail/System Pressure Too Low",
             "P0093": "Fuel System Large Leak Detected"
         },
-        "ai_summary": "fuel system pressure fault consistent with known CR-V oil dilution TSB — recommend TSB review",
+        "ai_summary": "fuel system pressure fault — recommend fuel pressure test and injector inspection",
         "rpm": "0C80",
         "coolant": "76",
         "throttle": "00",
@@ -102,18 +111,20 @@ SCENARIOS = [
         "o2_raw":           0x50,
     },
     {
+        # MOTOR Sandbox: 2010 Nissan Altima
+        # VCdb Base Vehicle ID: 95980  MOTOR Vehicle ID: 22156
         "index": 3,
         "label": "S4",
-        "year": 2022,
-        "make": "RAM",
-        "model": "1500",
-        "vehicle": "2022 RAM 1500",
-        "vin": "1C6SRFFT5NN123456",
+        "year": 2010,
+        "make": "Nissan",
+        "model": "Altima",
+        "vehicle": "2010 Nissan Altima",
+        "vin": "1N4AL2AP6AN555869",
         "customer": "Derek Owens",
-        "complaint": "Transmission shudder 45-55 mph, no codes",
+        "complaint": "Transmission shudder 40-50 mph, no codes",
         "dtcs": [],
         "dtc_descriptions": {},
-        "ai_summary": "no DTCs — complaint-only intake. Known 8HP75 torque converter shudder pattern. Recommend fluid service and converter inspection.",
+        "ai_summary": "no DTCs — complaint-only intake. CVT shudder pattern common on this generation. Recommend CVT fluid service and inspection.",
         "rpm": "0D48",
         "coolant": "7D",
         "throttle": "00",
@@ -131,18 +142,20 @@ SCENARIOS = [
         "o2_raw":           0x48,
     },
     {
+        # MOTOR Sandbox: 2010 Toyota Camry
+        # VCdb Base Vehicle ID: 30402  MOTOR Vehicle ID: 20957
         "index": 4,
         "label": "S5",
-        "year": 2023,
+        "year": 2010,
         "make": "Toyota",
         "model": "Camry",
-        "vehicle": "2023 Toyota Camry",
-        "vin": "4T1C11AK5PU123456",
+        "vehicle": "2010 Toyota Camry",
+        "vin": "4T4BF3EK8AR074927",
         "customer": "Amy Torres",
-        "complaint": "Routine oil change + 90k service",
+        "complaint": "Routine oil change + inspection",
         "dtcs": [],
         "dtc_descriptions": {},
-        "ai_summary": "clean vehicle — no faults. Maintenance recommendations generated. Service summary SMS sent to customer.",
+        "ai_summary": "clean vehicle — no faults detected. Maintenance recommendations generated based on mileage and service history.",
         "rpm": "0C00",
         "coolant": "7A",
         "throttle": "00",
@@ -161,6 +174,7 @@ SCENARIOS = [
     }
 ]
 
+# UI color mapping
 SCENARIO_UI_COLORS = {
     "fault": "fault",
     "clean": "clean",
