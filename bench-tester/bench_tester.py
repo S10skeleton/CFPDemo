@@ -56,6 +56,8 @@ SCENARIOS = [
         "dtcs":     ["P0420", "P0171"],
         "rpm":      790, "coolant_c": 83, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 22, "iat_c": 28, "o2_raw": 0x44,
+        "stft_pct": 2.3, "ltft_pct": 1.6, "maf_gps": 2.8,
+        "map_kpa": 36, "timing_deg": 14,
     },
     {
         "label":    "S2",
@@ -65,6 +67,8 @@ SCENARIOS = [
         "dtcs":     ["P0302", "P0316"],
         "rpm":      750, "coolant_c": 80, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 20, "iat_c": 26, "o2_raw": 0x3C,
+        "stft_pct": 4.7, "ltft_pct": 3.1, "maf_gps": 3.2,
+        "map_kpa": 34, "timing_deg": 12,
     },
     {
         "label":    "S3",
@@ -74,6 +78,8 @@ SCENARIOS = [
         "dtcs":     ["P0171", "P0174"],
         "rpm":      800, "coolant_c": 79, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 24, "iat_c": 27, "o2_raw": 0x50,
+        "stft_pct": 9.4, "ltft_pct": 8.6, "maf_gps": 2.2,
+        "map_kpa": 32, "timing_deg": 16,
     },
     {
         "label":    "S4",
@@ -83,6 +89,8 @@ SCENARIOS = [
         "dtcs":     [],
         "rpm":      850, "coolant_c": 85, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 18, "iat_c": 25, "o2_raw": 0x48,
+        "stft_pct": 0.8, "ltft_pct": 1.6, "maf_gps": 3.5,
+        "map_kpa": 38, "timing_deg": 15,
     },
     {
         "label":    "S5",
@@ -92,16 +100,28 @@ SCENARIOS = [
         "dtcs":     [],
         "rpm":      768, "coolant_c": 82, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 20, "iat_c": 24, "o2_raw": 0x40,
+        "stft_pct": 1.6, "ltft_pct": 2.3, "maf_gps": 3.0,
+        "map_kpa": 37, "timing_deg": 14,
     },
 ]
 
 # Drive cycle patterns - (rpm, throttle_pct, speed_kph, load_pct)
 DRIVE_CYCLES = {
-    "IDLE":    {"rpm": 780,  "throttle_pct": 0,  "speed_kph": 0,   "engine_load_pct": 15},
-    "CITY":    {"rpm": 1800, "throttle_pct": 25, "speed_kph": 40,  "engine_load_pct": 45},
-    "HIGHWAY": {"rpm": 2200, "throttle_pct": 35, "speed_kph": 100, "engine_load_pct": 55},
-    "WOT":     {"rpm": 4500, "throttle_pct": 98, "speed_kph": 150, "engine_load_pct": 95},
-    "DECEL":   {"rpm": 900,  "throttle_pct": 0,  "speed_kph": 20,  "engine_load_pct": 8},
+    "IDLE":    {"rpm": 780,  "throttle_pct": 0,  "speed_kph": 0,   "engine_load_pct": 15,
+                "stft_pct": 2.3,  "ltft_pct": 1.6, "maf_gps": 3.0,
+                "map_kpa": 35,  "timing_deg": 14},
+    "CITY":    {"rpm": 1800, "throttle_pct": 25, "speed_kph": 40,  "engine_load_pct": 45,
+                "stft_pct": 0.8,  "ltft_pct": 1.6, "maf_gps": 7.5,
+                "map_kpa": 55,  "timing_deg": 18},
+    "HIGHWAY": {"rpm": 2200, "throttle_pct": 35, "speed_kph": 100, "engine_load_pct": 55,
+                "stft_pct": 0.0,  "ltft_pct": 1.6, "maf_gps": 12.0,
+                "map_kpa": 65,  "timing_deg": 20},
+    "WOT":     {"rpm": 4500, "throttle_pct": 98, "speed_kph": 150, "engine_load_pct": 95,
+                "stft_pct": -1.6, "ltft_pct": 1.6, "maf_gps": 35.0,
+                "map_kpa": 98,  "timing_deg": 24},
+    "DECEL":   {"rpm": 900,  "throttle_pct": 0,  "speed_kph": 20,  "engine_load_pct": 8,
+                "stft_pct": 5.5,  "ltft_pct": 1.6, "maf_gps": 1.5,
+                "map_kpa": 25,  "timing_deg": 10},
 }
 
 # -- Live State --------------------------------------------------------------
@@ -115,6 +135,11 @@ state = {
     "engine_load_pct":  SCENARIOS[0]["engine_load_pct"],
     "iat_c":            SCENARIOS[0]["iat_c"],
     "o2_raw":           SCENARIOS[0]["o2_raw"],
+    "stft_pct":         SCENARIOS[0]["stft_pct"],
+    "ltft_pct":         SCENARIOS[0]["ltft_pct"],
+    "maf_gps":          SCENARIOS[0]["maf_gps"],
+    "map_kpa":          SCENARIOS[0]["map_kpa"],
+    "timing_deg":       SCENARIOS[0]["timing_deg"],
     "connected":        False,
     "request_count":    0,
     "last_pid":         "",
@@ -140,7 +165,13 @@ def build_response(mode: int, pid: int) -> list:
 
     if mode == 0x01:
         if pid == 0x00:
-            return [0x06, 0x41, 0x00, 0xBE, 0x3F, 0xA8, 0x13, 0x00]
+            # Supported PIDs 01-20. Bit mapping: A=01-08, B=09-10, C=11-18, D=19-20
+            # Implemented: 01,04,05,06,07,0B,0C,0D,0E,0F,10,11,14,1F,20(group flag)
+            # A=0x9E: PIDs 01,04,05,06,07
+            # B=0x3F: PIDs 0B,0C,0D,0E,0F,10
+            # C=0x90: PIDs 11,14
+            # D=0x03: PIDs 1F,20(group-exists flag)
+            return [0x06, 0x41, 0x00, 0x9E, 0x3F, 0x90, 0x03, 0x00]
         elif pid == 0x01:
             mil  = 0x81 if dtcs else 0x01
             return [0x06, 0x41, 0x01, mil, len(dtcs), 0x07, 0xFF, 0x00]
@@ -148,6 +179,14 @@ def build_response(mode: int, pid: int) -> list:
             return [0x03, 0x41, 0x04, int(s["engine_load_pct"] * 255 / 100) & 0xFF]
         elif pid == 0x05:
             return [0x03, 0x41, 0x05, (s["coolant_c"] + 40) & 0xFF]
+        elif pid == 0x06:
+            # Short Fuel Trim B1: A = (pct/100 * 128) + 128, range -100% to +99.2%
+            raw = max(0, min(255, int((s["stft_pct"] / 100.0 * 128) + 128)))
+            return [0x03, 0x41, 0x06, raw]
+        elif pid == 0x07:
+            # Long Fuel Trim B1: same formula as STFT
+            raw = max(0, min(255, int((s["ltft_pct"] / 100.0 * 128) + 128)))
+            return [0x03, 0x41, 0x07, raw]
         elif pid == 0x0C:
             raw = int(s["rpm"] * 4)
             return [0x04, 0x41, 0x0C, (raw >> 8) & 0xFF, raw & 0xFF]
@@ -155,14 +194,40 @@ def build_response(mode: int, pid: int) -> list:
             return [0x03, 0x41, 0x0D, s["speed_kph"] & 0xFF]
         elif pid == 0x0F:
             return [0x03, 0x41, 0x0F, (s["iat_c"] + 40) & 0xFF]
+        elif pid == 0x0B:
+            # Intake Manifold Absolute Pressure: A = kPa (0-255)
+            return [0x03, 0x41, 0x0B, max(0, min(255, s["map_kpa"])) & 0xFF]
+        elif pid == 0x0E:
+            # Timing Advance: A = (degrees + 64) * 2, range -64 to +63.5 deg
+            raw = max(0, min(255, int((s["timing_deg"] + 64) * 2)))
+            return [0x03, 0x41, 0x0E, raw]
+        elif pid == 0x10:
+            # Mass Air Flow: (A*256+B)/100 g/s
+            raw = max(0, min(0xFFFF, int(s["maf_gps"] * 100)))
+            return [0x04, 0x41, 0x10, (raw >> 8) & 0xFF, raw & 0xFF]
         elif pid == 0x11:
             return [0x03, 0x41, 0x11, int(s["throttle_pct"] * 255 / 100) & 0xFF]
         elif pid == 0x14:
             return [0x04, 0x41, 0x14, s["o2_raw"], 0xFF]
         elif pid == 0x1F:
             return [0x04, 0x41, 0x1F, 0x00, 0x3C]
+        elif pid == 0x20:
+            # Supported PIDs 21-40: 0x21 (distance MIL), 0x31 (distance since clear)
+            # Bit40=1 signals 41-60 group exists (needed for 0x42)
+            return [0x06, 0x41, 0x20, 0x80, 0x00, 0x80, 0x01, 0x00]
         elif pid == 0x21:
             return [0x04, 0x41, 0x21, 0x00, 0x0A if dtcs else 0x00]
+        elif pid == 0x31:
+            # Distance since codes last cleared (km): report 0 km
+            return [0x04, 0x41, 0x31, 0x00, 0x00]
+        elif pid == 0x40:
+            # Supported PIDs 41-60: only 0x42 (control module voltage)
+            # Bit 0x42 = byte A bit 6
+            return [0x06, 0x41, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00]
+        elif pid == 0x42:
+            # Control Module Voltage: (A*256+B)/1000 V — fixed at 14.4V (charging)
+            raw = 14400  # 14.4V * 1000
+            return [0x04, 0x41, 0x42, (raw >> 8) & 0xFF, raw & 0xFF]
         return [0x03, 0x7F, 0x01, 0x12]
 
     elif mode == 0x02:
@@ -193,6 +258,14 @@ def build_response(mode: int, pid: int) -> list:
         with state_lock:
             state["active_dtcs"] = []
         return [0x01, 0x44]
+
+    elif mode == 0x07:
+        # Pending DTCs — always return "no pending codes" for bench tester
+        return [0x02, 0x47, 0x00]
+
+    elif mode == 0x0A:
+        # Permanent DTCs — always return "no permanent codes" for bench tester
+        return [0x02, 0x4A, 0x00]
 
     return [0x03, 0x7F, mode, 0x12]
 
@@ -520,6 +593,11 @@ class BenchTesterApp:
             state["throttle_pct"]    = sc["throttle_pct"]
             state["speed_kph"]       = sc["speed_kph"]
             state["engine_load_pct"] = sc["engine_load_pct"]
+            state["stft_pct"]        = sc["stft_pct"]
+            state["ltft_pct"]        = sc["ltft_pct"]
+            state["maf_gps"]         = sc["maf_gps"]
+            state["map_kpa"]         = sc["map_kpa"]
+            state["timing_deg"]      = sc["timing_deg"]
         self.rpm_var.set(sc["rpm"])
         self.coolant_var.set(sc["coolant_c"])
         self.throttle_var.set(sc["throttle_pct"])
