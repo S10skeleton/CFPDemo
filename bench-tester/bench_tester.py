@@ -275,24 +275,7 @@ def can_thread(log_callback, status_callback):
     status_callback("Connecting to CAN adapter...", ORANGE)
 
     try:
-        import libusb_package
-        import usb.core
-        backend = libusb_package.get_libusb1_backend()
-
-        # Force pyusb's default find() to use the libusb_package backend so
-        # gs_usb.GsUsb.scan() (called inside python-can) can see the adapter
-        # on Windows. Without this, scan() returns 0 devices.
-        _orig_find = usb.core.find
-        def _patched_find(*a, **kw):
-            kw.setdefault("backend", backend)
-            return _orig_find(*a, **kw)
-        usb.core.find = _patched_find
-
-        dev = usb.core.find(idVendor=0x1d50, idProduct=0x606f)
-        if dev is None:
-            raise OSError("SH-C31A not found via libusb_package")
-
-        bus = can_lib.Bus(interface="gs_usb", channel=0, bus=dev.bus, address=dev.address, bitrate=500000)
+        bus = can_lib.Bus(interface="slcan", channel="COM3", bitrate=500000)
     except Exception as e:
         status_callback(f"ERROR: {e}", CRIMSON)
         log_callback(f"Could not open gs_usb: {e}\nCheck USB CAN adapter is plugged in.")
