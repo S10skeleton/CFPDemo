@@ -57,7 +57,7 @@ SCENARIOS = [
         "rpm":      790, "coolant_c": 83, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 22, "iat_c": 28, "o2_raw": 0x44,
         "stft_pct": 2.3, "ltft_pct": 1.6, "maf_gps": 2.8,
-        "map_kpa": 36, "timing_deg": 14,
+        "map_kpa": 36, "timing_deg": 14, "banks": 2,
     },
     {
         "label":    "S2",
@@ -68,7 +68,7 @@ SCENARIOS = [
         "rpm":      750, "coolant_c": 80, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 20, "iat_c": 26, "o2_raw": 0x3C,
         "stft_pct": 4.7, "ltft_pct": 3.1, "maf_gps": 3.2,
-        "map_kpa": 34, "timing_deg": 12,
+        "map_kpa": 34, "timing_deg": 12, "banks": 2,
     },
     {
         "label":    "S3",
@@ -79,7 +79,7 @@ SCENARIOS = [
         "rpm":      800, "coolant_c": 79, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 24, "iat_c": 27, "o2_raw": 0x50,
         "stft_pct": 9.4, "ltft_pct": 8.6, "maf_gps": 2.2,
-        "map_kpa": 32, "timing_deg": 16,
+        "map_kpa": 32, "timing_deg": 16, "banks": 1,
     },
     {
         "label":    "S4",
@@ -90,7 +90,7 @@ SCENARIOS = [
         "rpm":      850, "coolant_c": 85, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 18, "iat_c": 25, "o2_raw": 0x48,
         "stft_pct": 0.8, "ltft_pct": 1.6, "maf_gps": 3.5,
-        "map_kpa": 38, "timing_deg": 15,
+        "map_kpa": 38, "timing_deg": 15, "banks": 1,
     },
     {
         "label":    "S5",
@@ -101,7 +101,7 @@ SCENARIOS = [
         "rpm":      768, "coolant_c": 82, "throttle_pct": 0,
         "speed_kph": 0, "engine_load_pct": 20, "iat_c": 24, "o2_raw": 0x40,
         "stft_pct": 1.6, "ltft_pct": 2.3, "maf_gps": 3.0,
-        "map_kpa": 37, "timing_deg": 14,
+        "map_kpa": 37, "timing_deg": 14, "banks": 1,
     },
 ]
 
@@ -158,20 +158,39 @@ def encode_dtc(dtc: str) -> list:
     byte2  = int(dtc[3:5], 16)
     return [byte1 & 0xFF, byte2 & 0xFF]
 
+def supported_pid_set(banks: int) -> set:
+    """Set of supported Mode-01 PID ints for the current scenario.
+    Bank-2 PIDs (08/09/3D) only present on V8 (banks>=2)."""
+    base = {0x01, 0x04, 0x05, 0x06, 0x07, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+            0x10, 0x11, 0x14, 0x15, 0x1F, 0x21,
+            0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x33, 0x3C,
+            0x42, 0x43, 0x44, 0x45, 0x46, 0x4C, 0x5C, 0x5E,
+            0x20, 0x40}  # 0x20/0x40 = continuation flags to next bitmask block
+    if banks >= 2:
+        base |= {0x08, 0x09, 0x3D}
+    return base
+
+
+def build_supported_bitmask(base_pid: int, banks: int) -> list:
+    """Build the 0100/0120/0140 supported-PID response for a 0x20-wide block.
+    Byte A bit7 = base+1 ... byte D bit0 = base+32 (SAE J1979)."""
+    sup = supported_pid_set(banks)
+    data = [0, 0, 0, 0]
+    for i in range(1, 33):
+        if (base_pid + i) in sup:
+            data[(i - 1) // 8] |= (1 << (7 - ((i - 1) % 8)))
+    return [0x06, 0x41, base_pid] + data + [0x00]
+
+
 def build_response(mode: int, pid: int) -> list:
     with state_lock:
         s = state.copy()
         dtcs = list(s["active_dtcs"])
+    banks = SCENARIOS[s["scenario_idx"]].get("banks", 1)
 
     if mode == 0x01:
         if pid == 0x00:
-            # Supported PIDs 01-20. Bit mapping: A=01-08, B=09-10, C=11-18, D=19-20
-            # Implemented: 01,04,05,06,07,0B,0C,0D,0E,0F,10,11,14,1F,20(group flag)
-            # A=0x9E: PIDs 01,04,05,06,07
-            # B=0x3F: PIDs 0B,0C,0D,0E,0F,10
-            # C=0x90: PIDs 11,14
-            # D=0x03: PIDs 1F,20(group-exists flag)
-            return [0x06, 0x41, 0x00, 0x9E, 0x3F, 0x90, 0x03, 0x00]
+            return build_supported_bitmask(0x00, banks)
         elif pid == 0x01:
             mil  = 0x81 if dtcs else 0x01
             return [0x06, 0x41, 0x01, mil, len(dtcs), 0x07, 0xFF, 0x00]
@@ -212,22 +231,91 @@ def build_response(mode: int, pid: int) -> list:
         elif pid == 0x1F:
             return [0x04, 0x41, 0x1F, 0x00, 0x3C]
         elif pid == 0x20:
-            # Supported PIDs 21-40: 0x21 (distance MIL), 0x31 (distance since clear)
-            # Bit40=1 signals 41-60 group exists (needed for 0x42)
-            return [0x06, 0x41, 0x20, 0x80, 0x00, 0x80, 0x01, 0x00]
+            return build_supported_bitmask(0x20, banks)
         elif pid == 0x21:
             return [0x04, 0x41, 0x21, 0x00, 0x0A if dtcs else 0x00]
         elif pid == 0x31:
             # Distance since codes last cleared (km): report 0 km
             return [0x04, 0x41, 0x31, 0x00, 0x00]
         elif pid == 0x40:
-            # Supported PIDs 41-60: only 0x42 (control module voltage)
-            # Bit 0x42 = byte A bit 6
-            return [0x06, 0x41, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00]
+            return build_supported_bitmask(0x40, banks)
         elif pid == 0x42:
             # Control Module Voltage: (A*256+B)/1000 V — fixed at 14.4V (charging)
             raw = 14400  # 14.4V * 1000
             return [0x04, 0x41, 0x42, (raw >> 8) & 0xFF, raw & 0xFF]
+        elif pid == 0x08:
+            if banks < 2:
+                return [0x03, 0x7F, 0x01, 0x12]
+            raw = max(0, min(255, int(((s["stft_pct"] + 0.8) / 100.0 * 128) + 128)))
+            return [0x03, 0x41, 0x08, raw]
+        elif pid == 0x09:
+            if banks < 2:
+                return [0x03, 0x7F, 0x01, 0x12]
+            raw = max(0, min(255, int(((s["ltft_pct"] + 0.5) / 100.0 * 128) + 128)))
+            return [0x03, 0x41, 0x09, raw]
+        elif pid == 0x0A:
+            # Fuel system pressure (gauge): A*3 kPa -> ~350 kPa port injection
+            return [0x03, 0x41, 0x0A, max(0, min(255, round(350 / 3)))]
+        elif pid == 0x15:
+            # O2 B1S2 (downstream). Healthy cat -> steady ~0.65V. P0420 -> mirrors
+            # upstream (a dead cat lets the upstream swing pass through).
+            a = s["o2_raw"] if "P0420" in dtcs else max(0, min(255, round(0.65 * 200)))
+            return [0x04, 0x41, 0x15, a & 0xFF, 0xFF]
+        elif pid == 0x2C:
+            # Commanded EGR: closed at idle and WOT, open mid-cruise
+            load = s["engine_load_pct"]
+            egr = 0.0 if (load < 30 or load > 80) else (load - 25) * 0.5
+            return [0x03, 0x41, 0x2C, max(0, min(255, round(egr * 255 / 100)))]
+        elif pid == 0x2D:
+            # EGR error: ~0% (tracking well). A=128 -> 0
+            return [0x03, 0x41, 0x2D, 128]
+        elif pid == 0x2E:
+            # Evap purge: ~0% at idle
+            return [0x03, 0x41, 0x2E, 0]
+        elif pid == 0x2F:
+            # Fuel level: 64%
+            return [0x03, 0x41, 0x2F, max(0, min(255, round(64 * 255 / 100)))]
+        elif pid == 0x30:
+            # Warm-ups since codes cleared
+            return [0x03, 0x41, 0x30, 40]
+        elif pid == 0x33:
+            # Barometric pressure: ~83 kPa (Colorado elevation)
+            return [0x03, 0x41, 0x33, 83]
+        elif pid == 0x3C:
+            # Catalyst temp B1S1: (256A+B)/10 - 40, hotter under load
+            t = max(0, min(0xFFFF, round((450 + s["engine_load_pct"] * 3 + 40) * 10)))
+            return [0x04, 0x41, 0x3C, (t >> 8) & 0xFF, t & 0xFF]
+        elif pid == 0x3D:
+            if banks < 2:
+                return [0x03, 0x7F, 0x01, 0x12]
+            t = max(0, min(0xFFFF, round((445 + s["engine_load_pct"] * 3 + 40) * 10)))
+            return [0x04, 0x41, 0x3D, (t >> 8) & 0xFF, t & 0xFF]
+        elif pid == 0x43:
+            # Absolute load: (256A+B)*100/255
+            v = max(0, min(0xFFFF, round(s["engine_load_pct"] * 255 / 100)))
+            return [0x04, 0x41, 0x43, (v >> 8) & 0xFF, v & 0xFF]
+        elif pid == 0x44:
+            # Commanded equivalence ratio (lambda): (256A+B)/32768.
+            # 1.0 in closed loop, ~0.88 power enrichment near WOT
+            lam = 0.88 if s["throttle_pct"] >= 80 else 1.0
+            raw = max(0, min(0xFFFF, round(lam * 32768)))
+            return [0x04, 0x41, 0x44, (raw >> 8) & 0xFF, raw & 0xFF]
+        elif pid == 0x45:
+            # Relative throttle position
+            return [0x03, 0x41, 0x45, int(s["throttle_pct"] * 255 / 100) & 0xFF]
+        elif pid == 0x46:
+            # Ambient air temp: 22C
+            return [0x03, 0x41, 0x46, (22 + 40) & 0xFF]
+        elif pid == 0x4C:
+            # Commanded throttle actuator
+            return [0x03, 0x41, 0x4C, int(s["throttle_pct"] * 255 / 100) & 0xFF]
+        elif pid == 0x5C:
+            # Engine oil temp: A-40, ~coolant + 7C
+            return [0x03, 0x41, 0x5C, (s["coolant_c"] + 7 + 40) & 0xFF]
+        elif pid == 0x5E:
+            # Engine fuel rate: (256A+B)/20 L/h, tracks MAF (~0.5x)
+            raw = max(0, min(0xFFFF, round(s["maf_gps"] * 0.5 * 20)))
+            return [0x04, 0x41, 0x5E, (raw >> 8) & 0xFF, raw & 0xFF]
         return [0x03, 0x7F, 0x01, 0x12]
 
     elif mode == 0x02:
@@ -328,6 +416,11 @@ def dynamic_pid_thread():
             state["throttle_pct"]    = max(0, min(100, pattern["throttle_pct"] + int(5 * math.sin(t * 1.2))))
             state["speed_kph"]       = max(0, int(pattern["speed_kph"] + 3 * math.sin(t * 0.4)))
             state["engine_load_pct"] = max(0, min(100, pattern["engine_load_pct"] + int(3 * math.sin(t * 0.9))))
+            state["maf_gps"]         = max(0.5, pattern["maf_gps"] + 0.8 * math.sin(t * 0.8))
+            state["map_kpa"]         = max(15, min(105, int(pattern["map_kpa"] + 2 * math.sin(t * 0.6))))
+            # Upstream O2 swings 0.1-0.9V in closed loop (~1 Hz). Downstream (0x15)
+            # mirrors this on P0420 vehicles; stays steady on a healthy cat.
+            state["o2_raw"]          = max(20, min(180, int(100 + 80 * math.sin(t * 5.0))))
 
 # -- CAN Bus Thread ----------------------------------------------------------
 
