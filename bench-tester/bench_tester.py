@@ -200,11 +200,11 @@ def build_response(mode: int, pid: int) -> list:
             return [0x03, 0x41, 0x05, (s["coolant_c"] + 40) & 0xFF]
         elif pid == 0x06:
             # Short Fuel Trim B1: A = (pct/100 * 128) + 128, range -100% to +99.2%
-            raw = max(0, min(255, int((s["stft_pct"] / 100.0 * 128) + 128)))
+            raw = max(0, min(255, round((s["stft_pct"] / 100.0 * 128) + 128)))
             return [0x03, 0x41, 0x06, raw]
         elif pid == 0x07:
             # Long Fuel Trim B1: same formula as STFT
-            raw = max(0, min(255, int((s["ltft_pct"] / 100.0 * 128) + 128)))
+            raw = max(0, min(255, round((s["ltft_pct"] / 100.0 * 128) + 128)))
             return [0x03, 0x41, 0x07, raw]
         elif pid == 0x0C:
             raw = int(s["rpm"] * 4)
@@ -246,12 +246,12 @@ def build_response(mode: int, pid: int) -> list:
         elif pid == 0x08:
             if banks < 2:
                 return [0x03, 0x7F, 0x01, 0x12]
-            raw = max(0, min(255, int(((s["stft_pct"] + 0.8) / 100.0 * 128) + 128)))
+            raw = max(0, min(255, round(((s["stft_pct"] + 0.8) / 100.0 * 128) + 128)))
             return [0x03, 0x41, 0x08, raw]
         elif pid == 0x09:
             if banks < 2:
                 return [0x03, 0x7F, 0x01, 0x12]
-            raw = max(0, min(255, int(((s["ltft_pct"] + 0.5) / 100.0 * 128) + 128)))
+            raw = max(0, min(255, round(((s["ltft_pct"] + 0.5) / 100.0 * 128) + 128)))
             return [0x03, 0x41, 0x09, raw]
         elif pid == 0x0A:
             # Fuel system pressure (gauge): A*3 kPa -> ~350 kPa port injection
